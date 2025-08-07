@@ -1,6 +1,6 @@
 {
-  "name": "text2animation",
-  "author": "Your Name",
+  "name": "picturediary",
+  "author": "Clovedog Lee",
   "private": true,
   "scripts": {
     "dev": "concurrently \"turbo dev --filter=web\" \"turbo dev --filter=agents\"",
