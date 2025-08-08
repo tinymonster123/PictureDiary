@@ -49,7 +49,3 @@ Now, analyze the following diary entry and provide the JSON output.
 **JSON Output:**
 \`\`\`json
 `;
-
-export const createEmotionExtractorPrompt = (diaryText: string): string => {
-    return emotionExtractorPrompt.replace('{USER_DIARY_TEXT}', diaryText);
-};

@@ -1,4 +1,6 @@
 import { Annotation } from "@langchain/langgraph";
+import { SkeletonJson } from "./skeleton/type.js";
+import { EmotionJson } from "./emotion_extractor/type.js";
 
 // 定义状态结构
 export const GraphState = Annotation.Root({
@@ -6,15 +8,15 @@ export const GraphState = Annotation.Root({
     originalText: Annotation<string>(),
 
     // SKeleton_Extractor 输出
-    skeleton: Annotation<Record<string, any>>({
-        reducer: (x, y) => ({ ...x, ...y }),
-        default: () => ({})
+    skeleton: Annotation<SkeletonJson | null>({
+        reducer: (x, y) => y || x || null,
+        default: () => null,
     }),
 
     // Emotion_Extractor 输出  
-    emotions: Annotation<Array<Record<string, any>>>({
-        reducer: (x, y) => y || x || [],
-        default: () => []
+    emotions: Annotation<EmotionJson | null>({
+        reducer: (x, y) => y || x || null,
+        default: () => null,
     }),
 
     // StoryBoard 输出
