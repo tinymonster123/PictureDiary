@@ -11,7 +11,9 @@
     "clean": "rm -rf ./dist .turbo || true",
     "format": "prettier --config .prettierrc --write \"src\"",
     "lint": "eslint src",
-    "lint:fix": "eslint src --fix"
+    "lint:fix": "eslint src --fix",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "dependencies": {
     "@elastic/elasticsearch": "^8.17.1",
@@ -46,6 +48,7 @@
     "eslint-plugin-no-instanceof": "^1.0.1",
     "eslint-plugin-prettier": "^5.2.3",
     "globals": "^15.14.0",
+    "jest": "^30.0.5",
     "prettier": "^3.3.3",
     "tsx": "^4.19.1",
     "turbo": "latest",
