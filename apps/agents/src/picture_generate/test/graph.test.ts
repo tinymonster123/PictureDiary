@@ -199,6 +199,102 @@ describe("pictureGenerateGraph", () => {
         });
     });
 
+    it("支持不同面板数量：应正确生成6格漫画", async () => {
+        const diaryText = "今天经历了很多事情。";
+        const mockStoryBoard = {
+            StoryBoard: {
+                title: "忙碌的一天",
+                panelCount: 6,
+                panels: [
+                    { panelNumber: 1, sceneDescription: "morning scene" },
+                    { panelNumber: 2, sceneDescription: "afternoon scene" },
+                    { panelNumber: 3, sceneDescription: "evening scene" },
+                    { panelNumber: 4, sceneDescription: "night scene" },
+                    { panelNumber: 5, sceneDescription: "reflection moment" },
+                    { panelNumber: 6, sceneDescription: "conclusion" },
+                ],
+            },
+        };
+
+        const prompts = [
+            "Style A, morning light, detailed",
+            "Style A, afternoon activity, detailed",
+            "Style A, evening atmosphere, detailed",
+            "Style A, night time, detailed",
+            "Style A, quiet reflection, detailed",
+            "Style A, peaceful conclusion, detailed"
+        ];
+        const images = [
+            { url: "https://example.com/1.jpg", width: 1024, height: 1024, content_type: "image/jpeg" },
+            { url: "https://example.com/2.jpg", width: 1024, height: 1024, content_type: "image/jpeg" },
+            { url: "https://example.com/3.jpg", width: 1024, height: 1024, content_type: "image/jpeg" },
+            { url: "https://example.com/4.jpg", width: 1024, height: 1024, content_type: "image/jpeg" },
+            { url: "https://example.com/5.jpg", width: 1024, height: 1024, content_type: "image/jpeg" },
+            { url: "https://example.com/6.jpg", width: 1024, height: 1024, content_type: "image/jpeg" }
+        ];
+
+        // 模拟 LLM 返回包含 6 个 tool_calls 的 AIMessage
+        llmInvoke.mockResolvedValue(new AIMessage({
+            content: "Generating 6 prompts...",
+            tool_calls: [{
+                type: "tool_call",
+                id: "t1",
+                name: "fal_ai_image_generation",
+                args: { input: JSON.stringify(prompts) }
+            }]
+        }));
+
+        // 模拟工具返回成功结果
+        const mockToolResponse = JSON.stringify({
+            results: prompts.map((prompt, index) => ({
+                prompt,
+                images: [images[index]],
+                seed: 12345 + index,
+                timings: { inference: 4.0 },
+                has_nsfw_concepts: [false]
+            })),
+            total_time: 6000,
+            success_count: 6,
+            error_count: 0,
+            errors: []
+        });
+        toolInvokeMock.mockResolvedValue(mockToolResponse);
+
+        // 2. 执行 (Act)
+        const result = await pictureGenerateGraph.invoke({
+            diaryText,
+            extractedStoryBoard: mockStoryBoard,
+        });
+
+        // 3. 断言 (Assert)
+        expect(llmInvoke).toHaveBeenCalledTimes(1);
+        expect(toolInvokeMock).toHaveBeenCalledTimes(1);
+
+        // 验证LLM调用时提到了6个提示词
+        const llmCallArgs = llmInvoke.mock.calls[0][0];
+        expect(llmCallArgs[1].content).toContain("generate 6 optimized image prompts");
+
+        // 验证工具调用参数包含6个提示词
+        const firstCall = toolInvokeMock.mock.calls[0];
+        expect(firstCall[0]).toMatchObject({
+            args: { input: JSON.stringify(prompts) },
+            name: "fal_ai_image_generation",
+            type: "tool_call"
+        });
+
+        expect(result.generatedPictures).toEqual({
+            PictureGenerateJson: {
+                prompts,
+                images,
+                total_time: 6000,
+                success_count: 6,
+                error_count: 0,
+                errors: [],
+            },
+        });
+        expect(result.currentIteration).toBe(1);
+    });
+
     it("达到最大迭代次数：应在+1后结束", async () => {
         const mockStoryBoard = {
             StoryBoard: {

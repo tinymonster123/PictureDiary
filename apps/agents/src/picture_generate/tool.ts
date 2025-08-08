@@ -11,12 +11,12 @@ export class FalAiImageGeneration extends Tool {
         return "FalAiImageGeneration";
     }
 
-    description = "一个AI图片生成工具，能够根据4个文本提示词并行生成对应的图片。输入参数必须是一个包含4个提示词字符串的JSON数组字符串。";
+    description = "一个AI图片生成工具，能够根据1-8个文本提示词并行生成对应的图片。输入参数必须是一个包含提示词字符串的JSON数组字符串。";
 
     name = "fal_ai_image_generation";
 
     schema = z.object({
-        input: z.string().optional().describe("包含4个提示词的JSON数组字符串")
+        input: z.string().optional().describe("包含提示词的JSON数组字符串，支持1-8个提示词")
     }).transform((obj) => obj.input ?? "");
 
     protected apiKey: string;
@@ -47,8 +47,12 @@ export class FalAiImageGeneration extends Tool {
                 throw new Error(`输入格式错误，请提供有效的JSON数组: ${error}`);
             }
 
-            if (!Array.isArray(prompts) || prompts.length !== 4) {
-                throw new Error('必须提供包含4个提示词的数组');
+            if (!Array.isArray(prompts) || prompts.length === 0) {
+                throw new Error('必须提供包含有效提示词的数组');
+            }
+
+            if (prompts.length > 8) {
+                throw new Error('一次最多只能生成8张图片');
             }
 
             const startTime = Date.now();

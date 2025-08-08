@@ -20,12 +20,13 @@ const callModel = async (
     const model = baseModel && typeof baseModel.bindTools === "function" ? baseModel.bindTools(TOOLS) : baseModel;
 
     const storyBoardInfo = state.extractedStoryBoard ? JSON.stringify(state.extractedStoryBoard, null, 2) : "No storyboard data available";
-    const humanMessage = new HumanMessage(`Please analyze the following storyboard and generate 4 optimized image prompts for Fal.ai FLUX model:
+    const panelCount = state.extractedStoryBoard?.StoryBoard?.panelCount || 4;
+    const humanMessage = new HumanMessage(`Please analyze the following storyboard and generate ${panelCount} optimized image prompts for Fal.ai FLUX model:
 
 Storyboard Information:
 ${storyBoardInfo}
 
-Please respond with exactly 4 detailed image prompts in JSON array format, following the guidelines in the system prompt.`);
+Please respond with exactly ${panelCount} detailed image prompts in JSON array format, following the guidelines in the system prompt. Each prompt should correspond to one panel in the storyboard.`);
 
     const response = await model.invoke([
         {
