@@ -32,6 +32,9 @@ export const GraphState = Annotation.Root({
     // Stitching 输出
     finalResult: Annotation<string>(),
 
+    // 步骤控制
+    currentStep: Annotation<string>(),
+
     // 流程控制
     processingStatus: Annotation<{
         skeletonDone: boolean;
