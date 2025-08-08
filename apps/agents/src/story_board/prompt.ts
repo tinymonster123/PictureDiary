@@ -91,7 +91,3 @@ Now, create a storyboard from the following diary analysis.
 **JSON OUTPUT:**
 \`\`\`json
 `;
-
-export const createStoryboardPrompt = (analysisJson: string): string => {
-  return storyboardPrompt.replace('{ANALYSIS_JSON}', analysisJson);
-};
