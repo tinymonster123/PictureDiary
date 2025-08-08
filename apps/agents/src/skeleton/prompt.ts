@@ -39,13 +39,11 @@ JSON Output:
 ---
 Now, analyze the following diary entry and provide the JSON output.
 
+IMPORTANT: You must return the result in JSON format and include ALL of the following fields: scenes, characters, objects, and setting. Each field is required in the output.
+
 Diary Text:
 {{USER_DIARY_TEXT}}
 
 JSON Output:
 \`\`\`json
 `;
-
-export const createSkeletonPrompt = (diaryText: string): string => {
-  return skeletonExtractorPrompt.replace('{USER_DIARY_TEXT}', diaryText);
-};
