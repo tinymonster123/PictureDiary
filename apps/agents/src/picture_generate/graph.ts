@@ -57,9 +57,12 @@ const handleToolResult = (
 
     try {
         const resultData = JSON.parse(lastMessage.content as string);
+        
+        const extractedImages = resultData.results?.flatMap((r: any) => r.images || []) || [];
+        
         const pictureData: PictureGenerateJson = {
             prompts: resultData.results?.map((r: any) => r.prompt) || [],
-            images: resultData.results?.flatMap((r: any) => r.images) || [],
+            images: extractedImages,
             total_time: resultData.total_time || 0,
             success_count: resultData.success_count || 0,
             error_count: resultData.error_count || 0,

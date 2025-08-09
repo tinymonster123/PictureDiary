@@ -161,6 +161,11 @@ const imageStitcher = async (
       throw new Error("缺少故事板或生成的图片数据");
     }
 
+    // 验证图片数据
+    if (!state.generatedImages.images || state.generatedImages.images.length === 0) {
+      throw new Error(`图片数据验证失败: 没有可用的生成图片`);
+    }
+
     // 构建拼接输入数据
     const stitchingInput: StitchingInput = {
       storyBoard: {
@@ -183,6 +188,8 @@ const imageStitcher = async (
         errors: state.generatedImages.errors || [],
       },
     };
+
+
 
     const result: StitchingOutput = await stitchImages(stitchingInput);
 
