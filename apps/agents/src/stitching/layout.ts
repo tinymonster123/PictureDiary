@@ -6,15 +6,20 @@ import { LAYOUT_CONFIGS, CANVAS_CONFIG } from "./config.js";
  */
 export const selectLayout = (panelCount: number): keyof typeof LAYOUT_CONFIGS => {
     switch (panelCount) {
+        case 1:
+        case 2:
+        case 3:
         case 4:
             return "2x2";
+        case 5:
         case 6:
             return "3x2";
+        case 7:
         case 8:
-            return "2x3"; // 8格使用2x3布局
+            return "4x2"; // 8格使用4x2布局
         default:
-            // 默认使用2x2，多余的面板会被忽略，不足的会留空
-            return "2x2";
+            // 对于更多面板，使用4x2并只显示前8个
+            return "4x2";
     }
 }
 

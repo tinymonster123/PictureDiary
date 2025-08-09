@@ -27,7 +27,7 @@ export interface StitchingOutput {
     width: number;
     height: number;
     layout: {
-        type: "2x2" | "3x2" | "1x4" | "2x3";
+        type: "2x2" | "3x2" | "1x4" | "2x3" | "4x2";
         panelSize: {
             width: number;
             height: number;
@@ -49,7 +49,7 @@ export interface PanelLayout {
 }
 
 export interface ComicLayout {
-    type: "2x2" | "3x2" | "1x4" | "2x3";
+    type: "2x2" | "3x2" | "1x4" | "2x3" | "4x2";
     canvasWidth: number;
     canvasHeight: number;
     panels: PanelLayout[];

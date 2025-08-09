@@ -27,6 +27,13 @@ export const LAYOUT_CONFIGS = {
         rows: 3,
         cols: 2,
         aspectRatio: 0.67, // 竖版
+    },
+    // 8格漫画：4x2
+    "4x2": {
+        type: "4x2" as const,
+        rows: 2,
+        cols: 4,
+        aspectRatio: 2.0, // 宽版
     }
 } as const;
 
