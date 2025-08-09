@@ -2,6 +2,7 @@ import { CallbackManagerForToolRun } from "@langchain/core/callbacks/manager";
 import { Tool } from "@langchain/core/tools";
 import { getEnvironmentVariable } from "@langchain/core/utils/env";
 import { z } from "zod";
+import { fal } from "@fal-ai/client";
 
 /**
  * Fal.ai 图片生成工具
@@ -32,6 +33,11 @@ export class FalAiImageGeneration extends Tool {
                 `未找到 Fal.ai API 密钥。请设置环境变量 "FAL_API_KEY"。`
             );
         }
+
+        // 配置 fal.ai 客户端
+        fal.config({
+            credentials: this.apiKey,
+        });
     }
 
     protected async _call(
@@ -59,46 +65,66 @@ export class FalAiImageGeneration extends Tool {
             const results: any[] = [];
             const errors: string[] = [];
 
-            // 并行提交所有请求到队列
-            const submitPromises = prompts.map((prompt, index) =>
-                this.submitToQueue(prompt, index)
-            );
+            console.log(`开始生成 ${prompts.length} 张图片...`);
 
-            console.log('正在提交请求到队列...');
-            const requestIds = await Promise.all(submitPromises);
-            console.log('所有请求已提交:', requestIds);
+            // 并行生成所有图片
+            const generationPromises = prompts.map(async (prompt, index) => {
+                try {
+                    console.log(`生成图片 ${index + 1}: ${prompt}`);
+                    
+                    const result = await fal.subscribe("fal-ai/flux/schnell", {
+                        input: {
+                            prompt,
+                            image_size: "square_hd", // 使用预定义的尺寸
+                            num_inference_steps: 4,
+                            guidance_scale: 3.5,
+                            num_images: 1,
+                            seed: Date.now() + index
+                        },
+                        logs: true,
+                        onQueueUpdate: (update: any) => {
+                            console.log(`图片 ${index + 1} 队列状态:`, update.status);
+                        }
+                    });
 
-            // 并行等待所有请求完成
-            const completionPromises = requestIds.map((requestId, index) =>
-                this.waitForCompletion(requestId)
-                    .then(result => ({
+                    console.log(`图片 ${index + 1} 生成成功:`, result);
+                    
+                    // 根据文档，result 包含 data 和 requestId
+                    const resultData = result.data as any;
+                    return {
                         index,
                         success: true,
-                        result,
+                        result: {
+                            prompt,
+                            images: resultData.images || [],
+                            seed: resultData.seed || Date.now(),
+                            timings: resultData.timings || {},
+                            has_nsfw_concepts: resultData.has_nsfw_concepts || [false]
+                        },
                         error: null
-                    }))
-                    .catch(error => ({
+                    };
+                } catch (error) {
+                    console.log(`图片 ${index + 1} 生成失败:`, error);
+                    return {
                         index,
                         success: false,
                         result: null,
-                        error: error.message
-                    }))
-            );
+                        error: error instanceof Error ? error.message : '未知错误'
+                    };
+                }
+            });
 
-            console.log('等待所有请求完成...');
-            const completionResults = await Promise.all(completionPromises);
+            console.log('等待所有图片生成完成...');
+            const completionResults = await Promise.all(generationPromises);
 
             // 处理结果
+            console.log('处理完成结果:', completionResults);
             completionResults.forEach(({ index, success, result, error }) => {
                 if (success && result) {
-                    results.push({
-                        prompt: prompts[index],
-                        images: result.images,
-                        seed: result.seed,
-                        timings: result.timings,
-                        has_nsfw_concepts: result.has_nsfw_concepts
-                    });
+                    console.log(`成功处理提示词 ${index + 1}:`, result);
+                    results.push(result);
                 } else if (error) {
+                    console.log(`处理提示词 ${index + 1} 失败:`, error);
                     errors.push(`提示词 ${index + 1} ("${prompts[index]}"): ${error}`);
                 }
             });
@@ -114,6 +140,7 @@ export class FalAiImageGeneration extends Tool {
                 errors
             };
 
+            console.log('最终工具响应:', JSON.stringify(response, null, 2));
             return JSON.stringify(response);
 
         } catch (error) {
@@ -121,112 +148,19 @@ export class FalAiImageGeneration extends Tool {
         }
     }
 
-    /**
-     * 提交单个图像生成请求到队列
-     */
-    private async submitToQueue(prompt: string, index: number): Promise<string> {
-        const payload: Record<string, unknown> = {
-            prompt,
-            image_size: { width: 1024, height: 1024 },
-            num_inference_steps: 4,
-            guidance_scale: 3.5,
-            num_images: 1,
-            seed: Date.now() + index
-        };
 
-        const response = await fetch(`${this.baseUrl}/fal-ai/flux/schnell`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Key ${this.apiKey}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`提交请求失败，状态码 ${response.status}: ${errorText}`);
-        }
-
-        const result = await response.json();
-        if (!result.request_id) {
-            throw new Error('无法解析 Fal.ai 响应，请重试。');
-        }
-
-        return result.request_id;
-    }
-
-    /**
-     * 检查请求状态
-     */
-    private async checkStatus(requestId: string): Promise<any> {
-        const response = await fetch(`${this.baseUrl}/requests/${requestId}/status`, {
-            headers: {
-                'Authorization': `Key ${this.apiKey}`
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(`检查状态失败，状态码 ${response.status}`);
-        }
-
-        return await response.json();
-    }
-
-    /**
-     * 获取生成结果
-     */
-    private async getResult(requestId: string): Promise<any> {
-        const response = await fetch(`${this.baseUrl}/requests/${requestId}`, {
-            headers: {
-                'Authorization': `Key ${this.apiKey}`
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(`获取结果失败，状态码 ${response.status}`);
-        }
-
-        return await response.json();
-    }
-
-    /**
-     * 等待请求完成
-     */
-    private async waitForCompletion(requestId: string): Promise<any> {
-        let retries = 0;
-        const maxRetries = 60;
-        const retryInterval = 2000;
-
-        while (retries < maxRetries) {
-            try {
-                const status = await this.checkStatus(requestId);
-
-                if (status.status === 'COMPLETED') {
-                    return await this.getResult(requestId);
-                } else if (status.status === 'FAILED') {
-                    throw new Error('请求处理失败');
-                }
-
-                // 等待后重试
-                await new Promise(resolve => setTimeout(resolve, retryInterval));
-                retries++;
-            } catch (error) {
-                if (retries === maxRetries - 1) {
-                    throw error;
-                }
-                retries++;
-                await new Promise(resolve => setTimeout(resolve, retryInterval));
-            }
-        }
-
-        throw new Error('请求超时: 超过最大重试次数');
-    }
 }
 
 /**
  * 创建工具数组，供 ToolNode 使用
  */
-export const TOOLS = [new FalAiImageGeneration()];
+export const TOOLS = (() => {
+    try {
+        return [new FalAiImageGeneration()];
+    } catch (error) {
+        console.warn('创建 FalAiImageGeneration 工具失败:', error);
+        return [];
+    }
+})();
 
 
