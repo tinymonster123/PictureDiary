@@ -214,41 +214,41 @@ const imageStitcher = async (
 /**
  * 路由函数 - 决定下一步执行哪个节点
  */
-const routeWorkflow = (state: typeof GraphState.State): string => {
-  const { processingStatus, currentStep } = state;
+// const _routeWorkflow = (state: typeof GraphState.State): string => {
+//   const { processingStatus, currentStep } = state;
 
-  // 如果是初始状态，开始并行处理骨架和情感提取
-  if (!currentStep || currentStep === "start") {
-    return "skeleton_extraction"; // 将启动两个并行节点
-  }
+//   // 如果是初始状态，开始并行处理骨架和情感提取
+//   if (!currentStep || currentStep === "start") {
+//     return "skeleton_extraction"; // 将启动两个并行节点
+//   }
 
-  // 骨架和情感提取完成后，进行故事板生成
-  if (
-    processingStatus.skeletonDone &&
-    processingStatus.emotionsDone &&
-    !processingStatus.storyboardDone
-  ) {
-    return "storyboard_generation";
-  }
+//   // 骨架和情感提取完成后，进行故事板生成
+//   if (
+//     processingStatus.skeletonDone &&
+//     processingStatus.emotionsDone &&
+//     !processingStatus.storyboardDone
+//   ) {
+//     return "storyboard_generation";
+//   }
 
-  // 故事板完成后，进行图片生成
-  if (processingStatus.storyboardDone && !processingStatus.imagesGenerated) {
-    return "picture_generation";
-  }
+//   // 故事板完成后，进行图片生成
+//   if (processingStatus.storyboardDone && !processingStatus.imagesGenerated) {
+//     return "picture_generation";
+//   }
 
-  // 图片生成完成后，进行拼接
-  if (processingStatus.imagesGenerated && !processingStatus.finalStitched) {
-    return "image_stitching";
-  }
+//   // 图片生成完成后，进行拼接
+//   if (processingStatus.imagesGenerated && !processingStatus.finalStitched) {
+//     return "image_stitching";
+//   }
 
-  // 全部完成
-  if (processingStatus.finalStitched) {
-    return END;
-  }
+//   // 全部完成
+//   if (processingStatus.finalStitched) {
+//     return END;
+//   }
 
-  // 默认结束（包括失败情况）
-  return END;
-};
+//   // 默认结束（包括失败情况）
+//   return END;
+// };
 
 /**
  * 创建主要的工作流图
@@ -262,16 +262,18 @@ export const createWorkflowGraph = () => {
     .addNode("picture_generation", pictureGenerator)
     .addNode("image_stitching", imageStitcher)
 
-    // 设置并行入口点 - 真正的 LangGraph 并行执行
+    // 设置并行入口点
     .addEdge("__start__", "skeleton_extraction")
     .addEdge("__start__", "emotion_extraction")
 
     // 添加条件边
-    .addConditionalEdges("skeleton_extraction", routeWorkflow)
-    .addConditionalEdges("emotion_extraction", routeWorkflow)
-    .addConditionalEdges("storyboard_generation", routeWorkflow)
-    .addConditionalEdges("picture_generation", routeWorkflow)
-    .addConditionalEdges("image_stitching", routeWorkflow);
+    .addEdge(
+      ["skeleton_extraction", "emotion_extraction"],
+      "storyboard_generation"
+    )
+    .addEdge("storyboard_generation", "picture_generation")
+    .addEdge("picture_generation", "image_stitching")
+    .addEdge("image_stitching", END);
 
   return workflow.compile();
 };

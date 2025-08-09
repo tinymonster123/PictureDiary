@@ -1,4 +1,4 @@
-import { ChatMoonshot } from "@langchain/community/chat_models/moonshot";
+import { ChatOpenAI } from "@langchain/openai";
 import { config } from "dotenv";
 import { resolve } from "path";
 
@@ -11,11 +11,16 @@ config({ path: envPath });
 //     return modelName
 // }
 
-export const loadChatMoonShot = async (modelName: string): Promise<ChatMoonshot> => {
-    const model = new ChatMoonshot({
-        apiKey: process.env.MOONSHOT_API_KEY,
-        model: modelName,
-        temperature: 0.1,
-    });
-    return model;
-}
+export const loadChatMoonShot = async (
+  modelName: string
+): Promise<ChatOpenAI> => {
+  const model = new ChatOpenAI({
+    apiKey: process.env.MOONSHOT_API_KEY,
+    model: modelName,
+    temperature: 0.1,
+    configuration: {
+      baseURL: "https://api.moonshot.cn/v1",
+    },
+  });
+  return model;
+};
