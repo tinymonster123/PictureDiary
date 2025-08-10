@@ -26,7 +26,14 @@ const callModel = async (
 Storyboard Information:
 ${storyBoardInfo}
 
-Please respond with exactly ${panelCount} detailed image prompts in JSON array format, following the guidelines in the system prompt. Each prompt should correspond to one panel in the storyboard.`);
+IMPORTANT: You MUST use the fal_ai_image_generation tool to generate the images. 
+
+Steps:
+1. Create ${panelCount} detailed Jim Woodring style image prompts following the guidelines in the system prompt
+2. Call the fal_ai_image_generation tool with these prompts as a JSON array string
+3. Each prompt should correspond to one panel in the storyboard and use identical character descriptions
+
+Do NOT just return the prompts as text - you MUST call the fal_ai_image_generation tool.`);
 
     const response = await model.invoke([
         {

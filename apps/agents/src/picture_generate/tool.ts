@@ -49,6 +49,7 @@ export class FalAiImageGeneration extends Tool {
     input: string,
     _runManager?: CallbackManagerForToolRun
   ): Promise<string> {
+    console.log("FalAiImageGeneration工具接收到输入:", input);
     try {
       // 解析输入的 prompts
       let prompts: string[];
@@ -80,7 +81,7 @@ export class FalAiImageGeneration extends Tool {
           // 使用更稳定的 FLUX schnell 模型，但优化为漫画风格
           const result = await fal.subscribe("fal-ai/flux/schnell", {
             input: {
-              prompt: `manga style comic panel, ${prompt}, speech bubble, dialogue, expressive anime character, comic book art, clean line art, cel shading`, // 添加漫画对话风格前缀
+              prompt: `Jim Woodring style comic panel, ${prompt}, English speech bubble, English dialogue, fluid organic lines, anthropomorphic characters, dreamlike surreal background, black ink line art, mysterious atmosphere`, // 添加Jim Woodring英文对话风格前缀
               image_size: "square_hd",
               num_inference_steps: 4, // FLUX schnell 推荐步数
               guidance_scale: 3.5,
