@@ -1,0 +1,7 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "picture_diary_workflow": "./src/graph.ts:mainWorkflowGraph"
+  },
+  "env": ".env"
+}
