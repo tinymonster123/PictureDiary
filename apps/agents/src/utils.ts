@@ -15,11 +15,11 @@ export const loadChatMoonShot = async (
   modelName: string
 ): Promise<ChatOpenAI> => {
   const model = new ChatOpenAI({
-    apiKey: process.env.MOONSHOT_API_KEY,
+    apiKey: process.env.MODEL_API_KEY,
     model: modelName,
     temperature: 0.1,
     configuration: {
-      baseURL: "https://api.moonshot.cn/v1",
+      baseURL: process.env.BASE_URL,
     },
   });
   return model;
